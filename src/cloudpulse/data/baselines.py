@@ -433,7 +433,6 @@ def causal_rolling_scores(
     return result.sort_values("_row_order").drop(columns="_row_order").reset_index(drop=True)
 
 
-
 def _evaluate_rolling_partition(frame: pd.DataFrame, threshold: float) -> dict[str, Any]:
     """Evaluate rolling scores while separating missing and warm-up rows."""
     metrics = _evaluate_partition(frame, 0.0, 1.0, threshold)
