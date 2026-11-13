@@ -17,9 +17,7 @@ def test_loader_reads_metadata_and_identifies_multiple_series(tmp_path: Path) ->
     first = tmp_path / "domain-a" / "series-1.csv"
     _write_series(
         first,
-        "TimeStamp,Value,Label\n"
-        "2026-01-01T00:00:00Z,1.5,0\n"
-        "2026-01-01T01:00:00Z,2.5,1\n",
+        "TimeStamp,Value,Label\n2026-01-01T00:00:00Z,1.5,0\n2026-01-01T01:00:00Z,2.5,1\n",
     )
     Path(f"{first}-metadata.json").write_text(
         json.dumps(
@@ -49,9 +47,7 @@ def test_loader_reads_metadata_and_identifies_multiple_series(tmp_path: Path) ->
 def test_loader_preserves_blank_measurements_as_missing(tmp_path: Path) -> None:
     _write_series(
         tmp_path / "series.csv",
-        "TimeStamp,Value,Label\n"
-        "2026-01-01T00:00:00Z,1.0,0\n"
-        "2026-01-01T01:00:00Z,,1\n",
+        "TimeStamp,Value,Label\n2026-01-01T00:00:00Z,1.0,0\n2026-01-01T01:00:00Z,,1\n",
     )
 
     frame = load_microsoft_series(tmp_path)
