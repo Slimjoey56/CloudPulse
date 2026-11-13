@@ -112,30 +112,42 @@ def test_loader_rejects_infinite_values(tmp_path: Path) -> None:
         load_microsoft_series(tmp_path)
 
 
-def test_audit_report_is_descriptive_and_counts_duplicates() -> None:
+def test_audit_report_classifies_exact_and_conflicting_duplicates() -> None:
     frame = pd.DataFrame(
         {
             "timestamp": pd.to_datetime(
                 [
                     "2026-01-01T00:00:00Z",
                     "2026-01-01T00:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T01:00:00Z",
                     "2026-01-01T01:00:00Z",
                 ],
                 utc=True,
             ),
-            "value": [1.0, 2.0, 3.0],
-            "label": [0, 1, 0],
-            "series_id": ["series-a", "series-a", "series-a"],
-            "source_file": ["a.csv", "a.csv", "a.csv"],
-            "metric_description": [None, None, None],
-            "publisher": [None, None, None],
+            "value": [1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+            "label": [0, 0, 0, 1, 0, 0],
+            "series_id": ["series-a"] * 6,
+            "source_file": ["a.csv"] * 6,
+            "metric_description": [None] * 6,
+            "publisher": [None] * 6,
         }
     )
 
     report = build_audit_report(frame)
+    series_report = report["series"][0]
 
-    assert report["row_count"] == 3
+    assert report["row_count"] == 6
     assert report["series_count"] == 1
-    assert report["anomaly_points"] == 1
-    assert report["duplicate_entity_timestamps"] == 1
+    assert report["duplicate_timestamp_groups"] == 2
+    assert report["duplicate_excess_rows"] == 4
+    assert report["exact_duplicate_excess_rows"] == 2
+    assert report["conflicting_timestamp_groups"] == 1
+    assert report["conflicting_timestamp_rows"] == 4
+    assert report["value_conflict_groups"] == 1
+    assert report["label_conflict_groups"] == 1
+    assert series_report["duplicate_timestamp_groups"] == 2
+    assert series_report["duplicate_excess_rows"] == 4
+    assert series_report["conflicting_timestamp_groups"] == 1
     assert "No model has been trained" in report["interpretation"]
