@@ -105,6 +105,7 @@ pytest
 - [Duplicate timestamp investigation](docs/data/DUPLICATE_RECORD_INVESTIGATION.md)
 - [Modelling view policy](docs/data/MODELLING_VIEW_POLICY.md)
 - [Exploratory analysis protocol](docs/research/EXPLORATORY_ANALYSIS_PROTOCOL.md)
+- [Observed exploratory findings](docs/research/EXPLORATORY_FINDINGS.md)
 - [Data governance](docs/data/DATA_GOVERNANCE.md)
 - [Development roadmap](docs/ROADMAP.md)
 - [Contribution standards](CONTRIBUTING.md)
