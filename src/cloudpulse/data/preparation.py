@@ -33,9 +33,7 @@ def prepare_microsoft_model_frame(
         }
 
     unique_observations = frame.drop_duplicates(subset=OBSERVATION_COLUMNS)
-    observation_counts = unique_observations.groupby(
-        KEY_COLUMNS, dropna=False
-    ).size()
+    observation_counts = unique_observations.groupby(KEY_COLUMNS, dropna=False).size()
     conflicting_keys = observation_counts[observation_counts > 1].index
 
     row_keys = pd.MultiIndex.from_frame(frame[KEY_COLUMNS])
