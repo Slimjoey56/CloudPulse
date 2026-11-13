@@ -55,9 +55,7 @@ def main() -> None:
     )
     rolling_report["preparation"] = preparation_report
     args.rolling_output.parent.mkdir(parents=True, exist_ok=True)
-    args.rolling_output.write_text(
-        json.dumps(rolling_report, indent=2) + "\n", encoding="utf-8"
-    )
+    args.rolling_output.write_text(json.dumps(rolling_report, indent=2) + "\n", encoding="utf-8")
 
     for name, report in (
         ("Static robust z-score", static_report),
