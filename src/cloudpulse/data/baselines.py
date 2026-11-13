@@ -193,14 +193,10 @@ def build_robust_zscore_report(
     }
 
     for series_id, train_group in splits["train"].groupby("series_id", sort=True):
-        validation_group = splits["validation"].loc[
-            splits["validation"]["series_id"] == series_id
-        ]
+        validation_group = splits["validation"].loc[splits["validation"]["series_id"] == series_id]
         test_group = splits["test"].loc[splits["test"]["series_id"] == series_id]
         center, scale, scale_method = _fit_robust_location_scale(train_group["value"])
-        validation_metrics = _evaluate_partition(
-            validation_group, center, scale, threshold
-        )
+        validation_metrics = _evaluate_partition(validation_group, center, scale, threshold)
         test_metrics = _evaluate_partition(test_group, center, scale, threshold)
         for key in aggregate_counts:
             aggregate_counts[key] += int(test_metrics[key])
