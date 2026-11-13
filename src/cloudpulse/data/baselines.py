@@ -416,6 +416,7 @@ def causal_rolling_scores(
         intervals = timestamps.diff().dt.total_seconds()
         reference_end = max(2, int(len(ordered) * reference_fraction))
         positive_intervals = intervals.iloc[:reference_end].loc[intervals.iloc[:reference_end] > 0]
+        segment_ids: pd.Series[Any]
         if positive_intervals.empty:
             segment_ids = pd.Series(0, index=ordered.index)
         else:
