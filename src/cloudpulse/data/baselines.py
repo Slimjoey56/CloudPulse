@@ -230,6 +230,25 @@ def build_robust_zscore_report(
         if recall is not None and precision + recall
         else (0.0 if recall == 0 else None)
     )
+    total_positive_labels_including_unscored = (
+        tp + fn + aggregate_counts["unscored_positive_labels"]
+    )
+    recall_counting_unscored_as_misses = (
+        tp / total_positive_labels_including_unscored
+        if total_positive_labels_including_unscored
+        else None
+    )
+    f1_counting_unscored_as_misses = (
+        2 * precision * recall_counting_unscored_as_misses
+        / (precision + recall_counting_unscored_as_misses)
+        if recall_counting_unscored_as_misses is not None
+        and precision + recall_counting_unscored_as_misses
+        else (
+            0.0
+            if recall_counting_unscored_as_misses == 0
+            else None
+        )
+    )
     test_scoring_coverage = (
         aggregate_counts["scored_rows"] / aggregate_counts["test_rows"]
         if aggregate_counts["test_rows"]
@@ -258,6 +277,16 @@ def build_robust_zscore_report(
             "precision": float(precision),
             "recall": float(recall) if recall is not None else None,
             "f1": float(f1) if f1 is not None else None,
+            "recall_counting_unscored_as_misses": (
+                float(recall_counting_unscored_as_misses)
+                if recall_counting_unscored_as_misses is not None
+                else None
+            ),
+            "f1_counting_unscored_as_misses": (
+                float(f1_counting_unscored_as_misses)
+                if f1_counting_unscored_as_misses is not None
+                else None
+            ),
         },
         "series": series_reports,
     }
