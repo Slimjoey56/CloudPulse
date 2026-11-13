@@ -170,6 +170,86 @@ def _evaluate_partition(
     }
 
 
+
+def _select_validation_threshold(
+    frame: pd.DataFrame,
+    center: float | None,
+    scale: float | None,
+    default_threshold: float,
+) -> tuple[float, str]:
+    """Select a threshold by validation F1 only; use the default when unscorable."""
+    observed = frame.loc[frame["value"].notna()]
+    if center is None or scale is None:
+        return default_threshold, "fallback_unscorable_training_series"
+    if observed.empty:
+        return default_threshold, "fallback_no_scored_validation_rows"
+    if not observed["label"].astype(int).any():
+        return default_threshold, "fallback_no_validation_positives"
+
+    candidates = (1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 8.0, 10.0)
+    best_threshold = default_threshold
+    best_f1 = -1.0
+    for candidate in candidates:
+        metrics = _evaluate_partition(frame, center, scale, candidate)
+        candidate_f1 = metrics["f1"]
+        if candidate_f1 is None:
+            continue
+        if candidate_f1 > best_f1 or (
+            math.isclose(candidate_f1, best_f1) and candidate > best_threshold
+        ):
+            best_f1 = candidate_f1
+            best_threshold = candidate
+
+    return best_threshold, "selected_max_validation_f1"
+
+
+def _micro_metrics(counts: dict[str, int]) -> dict[str, Any]:
+    """Calculate micro metrics, also counting unscored positives as misses."""
+    true_positives = counts["true_positives"]
+    false_positives = counts["false_positives"]
+    false_negatives = counts["false_negatives"]
+    precision = (
+        true_positives / (true_positives + false_positives)
+        if true_positives + false_positives
+        else 0.0
+    )
+    recall = (
+        true_positives / (true_positives + false_negatives)
+        if true_positives + false_negatives
+        else None
+    )
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if recall is not None and precision + recall
+        else (0.0 if recall == 0 else None)
+    )
+    positive_count_with_unscored = (
+        true_positives + false_negatives + counts["unscored_positive_labels"]
+    )
+    conservative_recall = (
+        true_positives / positive_count_with_unscored
+        if positive_count_with_unscored
+        else None
+    )
+    conservative_f1 = (
+        2 * precision * conservative_recall / (precision + conservative_recall)
+        if conservative_recall is not None and precision + conservative_recall
+        else (0.0 if conservative_recall == 0 else None)
+    )
+    return {
+        **counts,
+        "precision": float(precision),
+        "recall": float(recall) if recall is not None else None,
+        "f1": float(f1) if f1 is not None else None,
+        "recall_counting_unscored_as_misses": (
+            float(conservative_recall) if conservative_recall is not None else None
+        ),
+        "f1_counting_unscored_as_misses": (
+            float(conservative_f1) if conservative_f1 is not None else None
+        ),
+    }
+
+
 def build_robust_zscore_report(
     frame: pd.DataFrame,
     threshold: float = DEFAULT_THRESHOLD,
