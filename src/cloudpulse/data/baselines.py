@@ -38,7 +38,8 @@ def chronological_split(
         validation_end = int(row_count * (train_fraction + validation_fraction))
         if train_end < 1 or validation_end <= train_end or validation_end >= row_count:
             raise ValueError(
-                "Each series must contain enough rows for non-empty train, validation, and test splits"
+                "Each series must contain enough rows for non-empty train, validation, "
+                "and test splits"
             )
         parts["train"].append(ordered.iloc[:train_end])
         parts["validation"].append(ordered.iloc[train_end:validation_end])
