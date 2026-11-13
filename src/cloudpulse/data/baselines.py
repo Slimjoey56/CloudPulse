@@ -187,6 +187,8 @@ def build_robust_zscore_report(
     splits = chronological_split(frame, train_fraction, validation_fraction)
     series_reports: list[dict[str, Any]] = []
     aggregate_counts = {
+        "test_rows": 0,
+        "missing_value_rows": 0,
         "scored_rows": 0,
         "unscored_rows": 0,
         "unscored_positive_labels": 0,
@@ -228,6 +230,11 @@ def build_robust_zscore_report(
         if recall is not None and precision + recall
         else (0.0 if recall == 0 else None)
     )
+    test_scoring_coverage = (
+        aggregate_counts["scored_rows"] / aggregate_counts["test_rows"]
+        if aggregate_counts["test_rows"]
+        else 0.0
+    )
     return {
         "method": "per-series training median and scaled MAD robust z-score",
         "threshold": float(threshold),
@@ -245,6 +252,7 @@ def build_robust_zscore_report(
             "secondary": "training interquartile range divided by 1.349",
             "zero_variance": "series is unscorable; no arbitrary anomaly flags are generated",
         },
+        "test_scoring_coverage": float(test_scoring_coverage),
         "test_micro_metrics": {
             **aggregate_counts,
             "precision": float(precision),
