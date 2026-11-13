@@ -415,9 +415,7 @@ def causal_rolling_scores(
         timestamps = pd.to_datetime(ordered["timestamp"], utc=True)
         intervals = timestamps.diff().dt.total_seconds()
         reference_end = max(2, int(len(ordered) * reference_fraction))
-        positive_intervals = intervals.iloc[:reference_end].loc[
-            intervals.iloc[:reference_end] > 0
-        ]
+        positive_intervals = intervals.iloc[:reference_end].loc[intervals.iloc[:reference_end] > 0]
         if positive_intervals.empty:
             segment_ids = pd.Series(0, index=ordered.index)
         else:
@@ -468,9 +466,7 @@ def build_causal_rolling_report(
         raise ValueError("threshold must be a finite positive number")
 
     splits = chronological_split(frame, train_fraction, validation_fraction)
-    scored = causal_rolling_scores(
-        frame, window, min_periods, max_gap_factor, train_fraction
-    )
+    scored = causal_rolling_scores(frame, window, min_periods, max_gap_factor, train_fraction)
     scored["original_value"] = scored["value"]
     scored["value"] = scored["rolling_score"]
     series_reports: list[dict[str, Any]] = []
