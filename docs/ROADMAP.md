@@ -17,6 +17,7 @@ This roadmap is dependency-driven. A stage is complete only when its acceptance 
 - [x] Implement canonical loader and descriptive audit command.
 - [ ] Verify data-specific reuse terms before any redistribution.
 - [ ] Download the dataset and run the audit on a development machine.
+- [ ] Inspect the automated CI audit artifact and review per-series quality findings.
 - [ ] Review the generated data-quality report and document findings.
 
 **Exit criteria:** a downloaded, version-pinned dataset; reproducible acquisition manifest; completed data-quality report; documented limitations. No model claims are required at this stage.
