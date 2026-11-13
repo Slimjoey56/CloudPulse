@@ -26,9 +26,9 @@ This roadmap is dependency-driven. A stage is complete only when its acceptance 
 **Exit criteria:** a downloaded, version-pinned dataset; reproducible acquisition manifest; completed data-quality report; documented limitations. No model claims are required at this stage.
 
 ## Stage 2 — Exploratory analysis and baseline
-- [ ] Explore distributions, temporal patterns, missingness, and series variation.
+- [x] Generate per-series distribution, temporal-interval, missingness, and label summaries.
+- [x] Add reproducible exploratory-analysis output to dataset CI artifacts.
 - [ ] Define anomaly-event handling and point-label evaluation policy.
-- [ ] Create reproducible exploratory analysis outputs for selected series.
 - [ ] Implement static and robust-statistical detection baselines.
 - [ ] Implement a simple forecasting baseline for suitable signals.
 - [ ] Define chronological validation and test boundaries.

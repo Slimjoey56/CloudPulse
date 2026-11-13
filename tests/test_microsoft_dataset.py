@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from cloudpulse.data.audit_microsoft import build_audit_report
+from cloudpulse.data.exploration import build_exploration_report
 from cloudpulse.data.microsoft import load_microsoft_series
 from cloudpulse.data.preparation import prepare_microsoft_model_frame
 
@@ -215,3 +216,60 @@ def test_model_frame_rejects_missing_required_columns() -> None:
 
     with pytest.raises(ValueError, match="Missing required columns"):
         prepare_microsoft_model_frame(frame)
+
+
+def test_exploration_report_summarises_each_series_independently() -> None:
+    frame = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(
+                [
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T01:00:00Z",
+                    "2026-01-01T02:00:00Z",
+                    "2026-01-01T06:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                ],
+                utc=True,
+            ),
+            "value": [1.0, 2.0, float("nan"), 4.0, float("nan")],
+            "label": [0, 1, 0, 0, 1],
+            "series_id": ["series-a"] * 4 + ["series-b"],
+            "metric_description": ["Request rate"] * 4 + ["Latency"],
+        }
+    )
+
+    report = build_exploration_report(frame)
+    first, second = report["series"]
+
+    assert report["series_count"] == 2
+    assert report["row_count"] == 5
+    assert report["valid_value_count"] == 3
+    assert report["missing_value_count"] == 2
+    assert report["anomaly_label_count"] == 2
+    assert first["valid_value_count"] == 3
+    assert first["missing_value_count"] == 1
+    assert first["anomaly_label_count"] == 1
+    assert first["median_sampling_interval_seconds"] == 3600.0
+    assert first["interval_gap_count"] == 1
+    assert first["value_median"] == 2.0
+    assert first["value_median_absolute_deviation"] == 1.0
+    assert second["value_mean"] is None
+    assert second["value_quantiles"]["q50"] is None
+    assert report["model_training_performed"] is False
+
+
+def test_exploration_rejects_unprepared_duplicate_timestamps() -> None:
+    frame = pd.DataFrame(
+        {
+            "series_id": ["series-a", "series-a"],
+            "timestamp": pd.to_datetime(
+                ["2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"],
+                utc=True,
+            ),
+            "value": [1.0, 1.0],
+            "label": [0, 0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="unique series timestamps"):
+        build_exploration_report(frame)

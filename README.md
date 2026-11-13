@@ -12,6 +12,7 @@ CloudPulse is an applied research and software-engineering project for analysing
 - Validation of timestamps, numeric values, and binary anomaly labels.
 - Descriptive data-quality audit with exact-duplicate and conflicting-timestamp classification.
 - Conservative modelling-view preparation that collapses exact copies and excludes unresolved conflicting timestamp groups.
+- Per-series exploratory summaries for missingness, labels, sampling intervals, and value distributions.
 - Telemetry record schema and duplicate-observation checks.
 - Unit tests and a GitHub Actions quality workflow.
 
@@ -74,6 +75,14 @@ model_frame, preparation_report = prepare_microsoft_model_frame(raw)
 print(preparation_report)
 ```
 
+Generate reproducible per-series exploratory summaries:
+
+```bash
+python -m cloudpulse.data.explore_microsoft
+```
+
+The exploration command prepares the data first and writes `reports/generated/microsoft_cloud_monitoring_exploration.json`. It reports value statistics per series and does not pool values across metrics with different units.
+
 The preparation function preserves the raw frame, collapses exact duplicate observations, excludes unresolved conflicting timestamp groups, and retains missing values for downstream training-only handling.
 
 The default report path is `reports/generated/microsoft_cloud_monitoring_audit.json`. Raw data and generated reports are excluded from Git.
@@ -95,6 +104,8 @@ pytest
 - [Microsoft dataset card](docs/data/DATASET_CARD_MICROSOFT.md)
 - [Duplicate timestamp investigation](docs/data/DUPLICATE_RECORD_INVESTIGATION.md)
 - [Modelling view policy](docs/data/MODELLING_VIEW_POLICY.md)
+- [Exploratory analysis protocol](docs/research/EXPLORATORY_ANALYSIS_PROTOCOL.md)
+- [Observed exploratory findings](docs/research/EXPLORATORY_FINDINGS.md)
 - [Data governance](docs/data/DATA_GOVERNANCE.md)
 - [Development roadmap](docs/ROADMAP.md)
 - [Contribution standards](CONTRIBUTING.md)
