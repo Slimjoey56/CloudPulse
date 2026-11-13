@@ -38,3 +38,33 @@ jobs:
 
       - name: Test
         run: pytest --cov=cloudpulse --cov-report=term-missing
+
+  dataset-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Download pinned Microsoft telemetry dataset
+        run: python -m cloudpulse.data.download_microsoft
+
+      - name: Audit downloaded dataset
+        run: python -m cloudpulse.data.audit_microsoft
+
+      - name: Upload data-quality report
+        uses: actions/upload-artifact@v4
+        with:
+          name: microsoft-cloud-monitoring-audit
+          path: reports/generated/microsoft_cloud_monitoring_audit.json
+          if-no-files-found: error
