@@ -276,7 +276,6 @@ def test_exploration_rejects_unprepared_duplicate_timestamps() -> None:
         build_exploration_report(frame)
 
 
-
 def test_chronological_split_is_per_series_and_order_preserving() -> None:
     timestamps = pd.date_range("2026-01-01", periods=10, freq="h", tz="UTC")
     frame = pd.DataFrame(
@@ -295,9 +294,7 @@ def test_chronological_split_is_per_series_and_order_preserving() -> None:
     assert len(splits["test"]) == 4
     for series_id in ("series-a", "series-b"):
         train = splits["train"].loc[splits["train"]["series_id"] == series_id]
-        validation = splits["validation"].loc[
-            splits["validation"]["series_id"] == series_id
-        ]
+        validation = splits["validation"].loc[splits["validation"]["series_id"] == series_id]
         test = splits["test"].loc[splits["test"]["series_id"] == series_id]
         assert train["timestamp"].max() < validation["timestamp"].min()
         assert validation["timestamp"].max() < test["timestamp"].min()
