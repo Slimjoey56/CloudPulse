@@ -382,6 +382,7 @@ def causal_rolling_scores(
     window: int = 60,
     min_periods: int = 20,
     max_gap_factor: float = 3.0,
+    reference_fraction: float = 0.6,
 ) -> pd.DataFrame:
     """Score each point from prior observations in its uninterrupted time segment.
 
@@ -399,6 +400,8 @@ def causal_rolling_scores(
         raise ValueError("min_periods must be between 2 and window")
     if max_gap_factor <= 1 or not math.isfinite(max_gap_factor):
         raise ValueError("max_gap_factor must be finite and greater than 1")
+    if not 0 < reference_fraction < 1:
+        raise ValueError("reference_fraction must be between 0 and 1")
     if frame.duplicated(KEY_COLUMNS).any():
         raise ValueError("Rolling scoring requires unique series timestamps")
 
@@ -411,7 +414,10 @@ def causal_rolling_scores(
         ordered = group.sort_values("timestamp", kind="stable")
         timestamps = pd.to_datetime(ordered["timestamp"], utc=True)
         intervals = timestamps.diff().dt.total_seconds()
-        positive_intervals = intervals.loc[intervals > 0]
+        reference_end = max(2, int(len(ordered) * reference_fraction))
+        positive_intervals = intervals.iloc[:reference_end].loc[
+            intervals.iloc[:reference_end] > 0
+        ]
         if positive_intervals.empty:
             segment_ids = pd.Series(0, index=ordered.index)
         else:
@@ -462,7 +468,9 @@ def build_causal_rolling_report(
         raise ValueError("threshold must be a finite positive number")
 
     splits = chronological_split(frame, train_fraction, validation_fraction)
-    scored = causal_rolling_scores(frame, window, min_periods, max_gap_factor)
+    scored = causal_rolling_scores(
+        frame, window, min_periods, max_gap_factor, train_fraction
+    )
     scored["original_value"] = scored["value"]
     scored["value"] = scored["rolling_score"]
     series_reports: list[dict[str, Any]] = []
@@ -538,7 +546,8 @@ def build_causal_rolling_report(
         "causality_policy": (
             "Each score uses at most the preceding window observations; the current "
             "observation is excluded. Windows reset after gaps exceeding the configured "
-            "multiple of the series median positive sampling interval."
+            "multiple of the series median positive sampling interval estimated from "
+            "the training prefix only."
         ),
         "missing_value_policy": (
             "Missing values remain in the time sequence and do not contribute to rolling "
