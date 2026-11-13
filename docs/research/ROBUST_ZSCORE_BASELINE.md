@@ -18,7 +18,7 @@ For each series, the training median is the location estimate. Scale is estimate
 
 1. `1.4826 × median absolute deviation` when the training MAD is non-zero;
 2. `IQR / 1.349` when MAD is zero but IQR is non-zero;
-3. a zero-variance rule when both robust scale estimates are zero: any non-zero deviation from the training median is flagged.
+3. if both robust scale estimates are zero, the series is marked unscorable for that partition. No arbitrary anomaly flags are generated from a zero denominator.
 
 A scored observation is flagged when its absolute robust z-score is greater than or equal to 3.5.
 
