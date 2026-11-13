@@ -219,6 +219,7 @@ def test_model_frame_rejects_missing_required_columns() -> None:
 
 
 
+
 def test_exploration_report_summarises_each_series_independently() -> None:
     frame = pd.DataFrame(
         {
@@ -257,6 +258,7 @@ def test_exploration_report_summarises_each_series_independently() -> None:
     assert second["value_mean"] is None
     assert second["value_quantiles"]["q50"] is None
     assert report["model_training_performed"] is False
+
 
 
 def test_exploration_rejects_unprepared_duplicate_timestamps() -> None:
