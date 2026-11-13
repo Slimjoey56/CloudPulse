@@ -17,6 +17,7 @@ api = ["fastapi>=0.111,<1.0", "uvicorn[standard]>=0.30,<1.0"]
 [project.scripts]
 cloudpulse-download-microsoft = "cloudpulse.data.download_microsoft:main"
 cloudpulse-audit-microsoft = "cloudpulse.data.audit_microsoft:main"
+cloudpulse-explore-microsoft = "cloudpulse.data.explore_microsoft:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
