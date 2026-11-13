@@ -206,7 +206,8 @@ def build_robust_zscore_report(
         validation_metrics = _evaluate_partition(validation_group, center, scale, threshold)
         test_metrics = _evaluate_partition(test_group, center, scale, threshold)
         for key in aggregate_counts:
-            aggregate_counts[key] += int(test_metrics[key])
+            source_key = "rows" if key == "test_rows" else key
+            aggregate_counts[key] += int(test_metrics[source_key])
         series_reports.append(
             {
                 "series_id": str(series_id),
@@ -239,15 +240,13 @@ def build_robust_zscore_report(
         else None
     )
     f1_counting_unscored_as_misses = (
-        2 * precision * recall_counting_unscored_as_misses
+        2
+        * precision
+        * recall_counting_unscored_as_misses
         / (precision + recall_counting_unscored_as_misses)
         if recall_counting_unscored_as_misses is not None
         and precision + recall_counting_unscored_as_misses
-        else (
-            0.0
-            if recall_counting_unscored_as_misses == 0
-            else None
-        )
+        else (0.0 if recall_counting_unscored_as_misses == 0 else None)
     )
     test_scoring_coverage = (
         aggregate_counts["scored_rows"] / aggregate_counts["test_rows"]
