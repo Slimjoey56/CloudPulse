@@ -332,6 +332,19 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
     assert second["test"]["unscored_rows"] == 4
     assert second["test"]["false_positives"] == 0
     assert second["test"]["recall"] is None
+
+    changed_test_labels = frame.copy()
+    test_mask = (
+        (changed_test_labels["series_id"] == "series-a")
+        & (changed_test_labels["timestamp"] >= timestamps[16])
+    )
+    changed_test_labels.loc[test_mask, "label"] = [0, 1, 1, 1]
+    changed_report = build_robust_zscore_report(changed_test_labels)
+    assert (
+        changed_report["series"][0]["validation_selected_threshold"]
+        == first["validation_selected_threshold"]
+    )
+
     assert report["test_micro_metrics"]["test_rows"] == 8
     assert report["test_micro_metrics"]["scored_rows"] == 4
     assert report["test_micro_metrics"]["unscored_rows"] == 4
