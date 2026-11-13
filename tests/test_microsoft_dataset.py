@@ -327,7 +327,7 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
     assert first["test_at_validation_selected_threshold"]["true_positives"] == 1
     assert second["scale_method"] == "zero_variance_unscorable"
     assert second["validation_selected_threshold"] == 3.5
-    assert second["threshold_selection"] == "fallback_no_validation_positives"
+    assert second["threshold_selection"] == "fallback_unscorable_training_series"
     assert second["test"]["scored_rows"] == 0
     assert second["test"]["unscored_rows"] == 4
     assert second["test"]["false_positives"] == 0
