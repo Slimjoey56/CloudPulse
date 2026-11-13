@@ -148,6 +148,14 @@ def test_audit_report_classifies_exact_and_conflicting_duplicates() -> None:
     assert report["conflicting_timestamp_rows"] == 4
     assert report["value_conflict_groups"] == 1
     assert report["label_conflict_groups"] == 1
+    assert report["modelling_view_preparation"] == {
+        "input_rows": 6,
+        "conflicting_timestamp_groups_excluded": 1,
+        "conflicting_rows_excluded": 4,
+        "exact_duplicate_rows_removed": 1,
+        "missing_value_rows_retained": 0,
+        "output_rows": 1,
+    }
     assert series_report["duplicate_timestamp_groups"] == 2
     assert series_report["duplicate_excess_rows"] == 4
     assert series_report["conflicting_timestamp_groups"] == 1
