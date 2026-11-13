@@ -362,7 +362,6 @@ def build_robust_zscore_report(
     }
 
 
-
 def _rolling_robust_scale(values: Any) -> float:
     """Estimate a positive robust scale from one historical window."""
     window = pd.Series(values, dtype="float64").dropna()
@@ -435,9 +434,7 @@ def causal_rolling_scores(
 
 
 
-def _evaluate_rolling_partition(
-    frame: pd.DataFrame, threshold: float
-) -> dict[str, Any]:
+def _evaluate_rolling_partition(frame: pd.DataFrame, threshold: float) -> dict[str, Any]:
     """Evaluate rolling scores while separating missing and warm-up rows."""
     metrics = _evaluate_partition(frame, 0.0, 1.0, threshold)
     original_missing = int(frame["original_value"].isna().sum())
@@ -487,9 +484,7 @@ def build_causal_rolling_report(
 
     for series_id, train_group in splits["train"].groupby("series_id", sort=True):
         series_rows = scored.loc[scored["series_id"] == series_id].copy()
-        ordered = frame.loc[frame["series_id"] == series_id].sort_values(
-            "timestamp", kind="stable"
-        )
+        ordered = frame.loc[frame["series_id"] == series_id].sort_values("timestamp", kind="stable")
         train_end = int(len(ordered) * train_fraction)
         validation_end = int(len(ordered) * (train_fraction + validation_fraction))
         validation_times = set(ordered.iloc[train_end:validation_end]["timestamp"])
@@ -502,9 +497,7 @@ def build_causal_rolling_report(
         selected_threshold, selection_reason = _select_validation_threshold(
             validation_group, 0.0, 1.0, threshold
         )
-        validation_tuned = _evaluate_rolling_partition(
-            validation_group, selected_threshold
-        )
+        validation_tuned = _evaluate_rolling_partition(validation_group, selected_threshold)
         test_tuned = _evaluate_rolling_partition(test_group, selected_threshold)
 
         for key in metric_keys:
@@ -557,9 +550,7 @@ def build_causal_rolling_report(
             "Window scale uses 1.4826 times MAD; IQR divided by 1.349 is used when MAD "
             "is zero but IQR is positive. Zero-scale windows are unscorable."
         ),
-        "validation_threshold_grid": [
-            1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 8.0, 10.0
-        ],
+        "validation_threshold_grid": [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 8.0, 10.0],
         "test_scoring_coverage": float(scoring_coverage),
         "test_micro_metrics": _micro_metrics(fixed_counts),
         "validation_tuned_test_micro_metrics": _micro_metrics(tuned_counts),
