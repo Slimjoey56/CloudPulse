@@ -307,7 +307,7 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
             "series_id": ["series-a"] * 20 + ["series-b"] * 20,
             "timestamp": list(timestamps) + list(timestamps),
             "value": list(range(1, 13)) + [13, 14, 15, 16, 100, 1, 2, 3] + [5] * 16 + [5, 5, 8, 5],
-            "label": [0] * 16 + [1, 0, 0, 0] + [0] * 16 + [1, 0, 0, 0],
+            "label": [0] * 12 + [0, 1, 1, 0] + [1, 0, 0, 0] + [0] * 16 + [1, 0, 0, 0],
         }
     )
 
