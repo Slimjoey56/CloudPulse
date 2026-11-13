@@ -434,6 +434,20 @@ def causal_rolling_scores(
     return result.sort_values("_row_order").drop(columns="_row_order").reset_index(drop=True)
 
 
+
+def _evaluate_rolling_partition(
+    frame: pd.DataFrame, threshold: float
+) -> dict[str, Any]:
+    """Evaluate rolling scores while separating missing and warm-up rows."""
+    metrics = _evaluate_partition(frame, 0.0, 1.0, threshold)
+    original_missing = int(frame["original_value"].isna().sum())
+    warmup = frame["original_value"].notna() & frame["rolling_score"].isna()
+    metrics["missing_value_rows"] = original_missing
+    metrics["unscored_rows"] = int(warmup.sum())
+    metrics["unscored_positive_labels"] = int(frame.loc[warmup, "label"].sum())
+    return metrics
+
+
 def build_causal_rolling_report(
     frame: pd.DataFrame,
     threshold: float = DEFAULT_THRESHOLD,
@@ -453,6 +467,7 @@ def build_causal_rolling_report(
 
     splits = chronological_split(frame, train_fraction, validation_fraction)
     scored = causal_rolling_scores(frame, window, min_periods, max_gap_factor)
+    scored["original_value"] = scored["value"]
     scored["value"] = scored["rolling_score"]
     series_reports: list[dict[str, Any]] = []
     metric_keys = (
@@ -482,15 +497,15 @@ def build_causal_rolling_report(
         validation_group = series_rows.loc[series_rows["timestamp"].isin(validation_times)]
         test_group = series_rows.loc[series_rows["timestamp"].isin(test_times)]
 
-        validation_fixed = _evaluate_partition(validation_group, 0.0, 1.0, threshold)
-        test_fixed = _evaluate_partition(test_group, 0.0, 1.0, threshold)
+        validation_fixed = _evaluate_rolling_partition(validation_group, threshold)
+        test_fixed = _evaluate_rolling_partition(test_group, threshold)
         selected_threshold, selection_reason = _select_validation_threshold(
             validation_group, 0.0, 1.0, threshold
         )
-        validation_tuned = _evaluate_partition(
-            validation_group, 0.0, 1.0, selected_threshold
+        validation_tuned = _evaluate_rolling_partition(
+            validation_group, selected_threshold
         )
-        test_tuned = _evaluate_partition(test_group, 0.0, 1.0, selected_threshold)
+        test_tuned = _evaluate_rolling_partition(test_group, selected_threshold)
 
         for key in metric_keys:
             source_key = "rows" if key == "test_rows" else key
