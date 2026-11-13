@@ -37,6 +37,23 @@ Confusion counts on scored rows:
 | Recall counting unscored positives as misses | 55.38% |
 | F1 counting unscored positives as misses | 18.29% |
 
+## Validation-selected threshold comparison
+
+A second experiment selected a threshold independently for each series by maximising validation F1 over the predeclared grid. The test labels were not used to choose thresholds. Series with no positive validation labels or an unscorable training scale retained the fixed threshold of 3.5.
+
+| Test metric | Fixed 3.5 threshold | Validation-selected threshold |
+|---|---:|---:|
+| True positives | 319 | 335 |
+| False positives | 2,594 | 2,572 |
+| False negatives | 208 | 192 |
+| Precision | 10.95% | 11.52% |
+| Recall on scored rows | 60.53% | 63.57% |
+| F1 on scored rows | 18.55% | 19.51% |
+| Recall counting unscored positives as misses | 55.38% | 58.16% |
+| F1 counting unscored positives as misses | 18.29% | 19.24% |
+
+Of the 60 series, 19 received a threshold selected on validation, 36 fell back because validation had no positive labels, and five were unscorable because their training scale was zero. The improvement is modest, and precision remains low.
+
 ## Interpretation
 
 The baseline detects some labelled anomalies but produces a large number of false positives. A precision of 10.95% means most flagged scored observations are not labelled anomalies in this test partition. It is not suitable for operational alerting in its current form.
