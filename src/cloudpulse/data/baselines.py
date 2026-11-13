@@ -360,3 +360,199 @@ def build_robust_zscore_report(
         "validation_tuned_test_micro_metrics": _micro_metrics(tuned_counts),
         "series": series_reports,
     }
+
+
+
+def _rolling_robust_scale(values: Any) -> float:
+    """Estimate a positive robust scale from one historical window."""
+    window = pd.Series(values, dtype="float64").dropna()
+    if window.empty:
+        return float("nan")
+    center = float(window.median())
+    mad = float((window - center).abs().median())
+    if mad > 0:
+        return 1.4826 * mad
+    interquartile_range = float(window.quantile(0.75) - window.quantile(0.25))
+    if interquartile_range > 0:
+        return interquartile_range / 1.349
+    return float("nan")
+
+
+def causal_rolling_scores(
+    frame: pd.DataFrame,
+    window: int = 60,
+    min_periods: int = 20,
+    max_gap_factor: float = 3.0,
+) -> pd.DataFrame:
+    """Score each point from prior observations in its uninterrupted time segment.
+
+    The current point is excluded with shift(1). Windows are observation-count
+    based; a timestamp gap greater than max_gap_factor times the series'
+    median positive sampling interval starts a fresh segment.
+    """
+    required = {"series_id", "timestamp", "value"}
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    if window < 2:
+        raise ValueError("window must be at least 2")
+    if min_periods < 2 or min_periods > window:
+        raise ValueError("min_periods must be between 2 and window")
+    if max_gap_factor <= 1 or not math.isfinite(max_gap_factor):
+        raise ValueError("max_gap_factor must be finite and greater than 1")
+    if frame.duplicated(KEY_COLUMNS).any():
+        raise ValueError("Rolling scoring requires unique series timestamps")
+
+    result = frame.copy().reset_index(drop=True)
+    result["_row_order"] = range(len(result))
+    result["rolling_center"] = float("nan")
+    result["rolling_scale"] = float("nan")
+    result["rolling_score"] = float("nan")
+    for _, group in result.groupby("series_id", sort=True):
+        ordered = group.sort_values("timestamp", kind="stable")
+        timestamps = pd.to_datetime(ordered["timestamp"], utc=True)
+        intervals = timestamps.diff().dt.total_seconds()
+        positive_intervals = intervals.loc[intervals > 0]
+        if positive_intervals.empty:
+            segment_ids = pd.Series(0, index=ordered.index)
+        else:
+            typical_interval = float(positive_intervals.median())
+            gap = intervals > typical_interval * max_gap_factor
+            segment_ids = gap.fillna(False).cumsum()
+
+        for _, segment in ordered.groupby(segment_ids, sort=False):
+            historical = segment["value"].shift(1)
+            center = historical.rolling(window=window, min_periods=min_periods).median()
+            scale = historical.rolling(window=window, min_periods=min_periods).apply(
+                _rolling_robust_scale, raw=True
+            )
+            score = (segment["value"] - center).abs() / scale
+            result.loc[segment.index, "rolling_center"] = center
+            result.loc[segment.index, "rolling_scale"] = scale
+            result.loc[segment.index, "rolling_score"] = score
+
+    return result.sort_values("_row_order").drop(columns="_row_order").reset_index(drop=True)
+
+
+def build_causal_rolling_report(
+    frame: pd.DataFrame,
+    threshold: float = DEFAULT_THRESHOLD,
+    window: int = 60,
+    min_periods: int = 20,
+    max_gap_factor: float = 3.0,
+    train_fraction: float = 0.6,
+    validation_fraction: float = 0.2,
+) -> dict[str, Any]:
+    """Evaluate causal rolling scores with validation-only threshold selection."""
+    required = {"series_id", "timestamp", "value", "label"}
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    if threshold <= 0 or not math.isfinite(threshold):
+        raise ValueError("threshold must be a finite positive number")
+
+    splits = chronological_split(frame, train_fraction, validation_fraction)
+    scored = causal_rolling_scores(frame, window, min_periods, max_gap_factor)
+    scored["value"] = scored["rolling_score"]
+    series_reports: list[dict[str, Any]] = []
+    metric_keys = (
+        "test_rows",
+        "missing_value_rows",
+        "scored_rows",
+        "unscored_rows",
+        "unscored_positive_labels",
+        "positive_labels",
+        "true_positives",
+        "false_positives",
+        "false_negatives",
+        "true_negatives",
+    )
+    fixed_counts = {key: 0 for key in metric_keys}
+    tuned_counts = {key: 0 for key in metric_keys}
+
+    for series_id, train_group in splits["train"].groupby("series_id", sort=True):
+        validation_indices = splits["validation"].index
+        test_indices = splits["test"].index
+        validation_ids = set(validation_indices)
+        test_ids = set(test_indices)
+        series_rows = scored.loc[scored["series_id"] == series_id].copy()
+        # The split frames retain their original row indices only until concatenation;
+        # timestamp boundaries provide an unambiguous per-series partition here.
+        ordered = frame.loc[frame["series_id"] == series_id].sort_values(
+            "timestamp", kind="stable"
+        )
+        train_end = int(len(ordered) * train_fraction)
+        validation_end = int(len(ordered) * (train_fraction + validation_fraction))
+        validation_times = set(ordered.iloc[train_end:validation_end]["timestamp"])
+        test_times = set(ordered.iloc[validation_end:]["timestamp"])
+        validation_group = series_rows.loc[series_rows["timestamp"].isin(validation_times)]
+        test_group = series_rows.loc[series_rows["timestamp"].isin(test_times)]
+
+        validation_fixed = _evaluate_partition(validation_group, 0.0, 1.0, threshold)
+        test_fixed = _evaluate_partition(test_group, 0.0, 1.0, threshold)
+        selected_threshold, selection_reason = _select_validation_threshold(
+            validation_group, 0.0, 1.0, threshold
+        )
+        validation_tuned = _evaluate_partition(
+            validation_group, 0.0, 1.0, selected_threshold
+        )
+        test_tuned = _evaluate_partition(test_group, 0.0, 1.0, selected_threshold)
+
+        for key in metric_keys:
+            source_key = "rows" if key == "test_rows" else key
+            fixed_counts[key] += int(test_fixed[source_key])
+            tuned_counts[key] += int(test_tuned[source_key])
+
+        series_reports.append(
+            {
+                "series_id": str(series_id),
+                "train_rows": int(len(train_group)),
+                "rolling_warmup_or_gap_unscored_rows": int(
+                    series_rows["rolling_score"].isna().sum()
+                ),
+                "fixed_threshold": float(threshold),
+                "validation": validation_fixed,
+                "test": test_fixed,
+                "validation_selected_threshold": float(selected_threshold),
+                "threshold_selection": selection_reason,
+                "validation_at_selected_threshold": validation_tuned,
+                "test_at_validation_selected_threshold": test_tuned,
+            }
+        )
+
+    scoring_coverage = (
+        fixed_counts["scored_rows"] / fixed_counts["test_rows"]
+        if fixed_counts["test_rows"]
+        else 0.0
+    )
+    return {
+        "method": "causal per-series rolling median and scaled MAD robust z-score",
+        "window_observations": int(window),
+        "minimum_historical_observations": int(min_periods),
+        "max_gap_factor": float(max_gap_factor),
+        "threshold": float(threshold),
+        "train_fraction": float(train_fraction),
+        "validation_fraction": float(validation_fraction),
+        "test_fraction": float(1 - train_fraction - validation_fraction),
+        "causality_policy": (
+            "Each score uses at most the preceding window observations; the current "
+            "observation is excluded. Windows reset after gaps exceeding the configured "
+            "multiple of the series median positive sampling interval."
+        ),
+        "missing_value_policy": (
+            "Missing values remain in the time sequence and do not contribute to rolling "
+            "statistics. A score is unavailable until the minimum number of historical "
+            "non-missing observations is present."
+        ),
+        "scale_policy": (
+            "Window scale uses 1.4826 times MAD; IQR divided by 1.349 is used when MAD "
+            "is zero but IQR is positive. Zero-scale windows are unscorable."
+        ),
+        "validation_threshold_grid": [
+            1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 8.0, 10.0
+        ],
+        "test_scoring_coverage": float(scoring_coverage),
+        "test_micro_metrics": _micro_metrics(fixed_counts),
+        "validation_tuned_test_micro_metrics": _micro_metrics(tuned_counts),
+        "series": series_reports,
+    }
