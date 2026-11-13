@@ -13,10 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 SOURCE_COMMIT = "6a07a53c2fac495fb6831811df4c980d6c04bd10"
-ARCHIVE_URL = (
-    "https://codeload.github.com/microsoft/cloud-monitoring-dataset/zip/"
-    f"{SOURCE_COMMIT}"
-)
+ARCHIVE_URL = f"https://codeload.github.com/microsoft/cloud-monitoring-dataset/zip/{SOURCE_COMMIT}"
 EXPECTED_CSV_FILES = 60
 EXPECTED_METADATA_FILES = 60
 
