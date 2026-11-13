@@ -1,6 +1,6 @@
 """Canonical telemetry data contracts."""
 
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
