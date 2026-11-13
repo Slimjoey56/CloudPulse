@@ -322,12 +322,15 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
     assert first["test"]["false_positives"] == 0
     assert first["test"]["recall"] == 1.0
     assert first["test"]["average_precision"] == 1.0
-    assert second["scale_method"] == "zero_variance_deviation_rule"
-    assert second["test"]["false_positives"] == 1
+    assert second["scale_method"] == "zero_variance_unscorable"
+    assert second["test"]["scored_rows"] == 0
+    assert second["test"]["unscored_rows"] == 4
+    assert second["test"]["false_positives"] == 0
     assert second["test"]["recall"] is None
     assert report["test_micro_metrics"]["true_positives"] == 1
-    assert report["test_micro_metrics"]["false_positives"] == 1
-    assert report["test_micro_metrics"]["precision"] == 0.5
+    assert report["test_micro_metrics"]["false_positives"] == 0
+    assert report["test_micro_metrics"]["unscored_rows"] == 4
+    assert report["test_micro_metrics"]["precision"] == 1.0
 
 
 def test_chronological_split_rejects_duplicate_timestamps() -> None:
