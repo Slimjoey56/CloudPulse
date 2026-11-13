@@ -31,6 +31,9 @@ This roadmap is dependency-driven. A stage is complete only when its acceptance 
 - [ ] Define anomaly-event handling and point-label evaluation policy.
 - [x] Implement a fixed-threshold robust z-score anomaly-detection baseline.
 - [x] Compare a per-series validation-selected threshold without using test labels.
+- [x] Implement a causal rolling robust detector with past-only windows and temporal-gap resets.
+- [x] Add validation-only threshold selection and CI evaluation for the rolling detector.
+- [ ] Analyse rolling detector error profiles and compare against static baselines.
 - [ ] Implement a separate static threshold baseline and compare its error profile.
 - [ ] Implement a simple forecasting baseline for suitable signals.
 - [ ] Define chronological validation and test boundaries.
