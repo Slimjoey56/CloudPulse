@@ -327,6 +327,10 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
     assert second["test"]["unscored_rows"] == 4
     assert second["test"]["false_positives"] == 0
     assert second["test"]["recall"] is None
+    assert report["test_micro_metrics"]["test_rows"] == 8
+    assert report["test_micro_metrics"]["scored_rows"] == 4
+    assert report["test_micro_metrics"]["unscored_rows"] == 4
+    assert report["test_scoring_coverage"] == 0.5
     assert report["test_micro_metrics"]["true_positives"] == 1
     assert report["test_micro_metrics"]["false_positives"] == 0
     assert report["test_micro_metrics"]["unscored_rows"] == 4
