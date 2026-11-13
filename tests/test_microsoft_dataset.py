@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from cloudpulse.data.audit_microsoft import build_audit_report
+from cloudpulse.data.baselines import build_robust_zscore_report, chronological_split
 from cloudpulse.data.exploration import build_exploration_report
 from cloudpulse.data.microsoft import load_microsoft_series
 from cloudpulse.data.preparation import prepare_microsoft_model_frame
@@ -273,3 +274,77 @@ def test_exploration_rejects_unprepared_duplicate_timestamps() -> None:
 
     with pytest.raises(ValueError, match="unique series timestamps"):
         build_exploration_report(frame)
+
+
+
+def test_chronological_split_is_per_series_and_order_preserving() -> None:
+    timestamps = pd.date_range("2026-01-01", periods=10, freq="h", tz="UTC")
+    frame = pd.DataFrame(
+        {
+            "series_id": ["series-a"] * 10 + ["series-b"] * 10,
+            "timestamp": list(timestamps) + list(timestamps),
+            "value": list(range(10)) + list(range(10)),
+            "label": [0] * 20,
+        }
+    )
+
+    splits = chronological_split(frame)
+
+    assert len(splits["train"]) == 12
+    assert len(splits["validation"]) == 4
+    assert len(splits["test"]) == 4
+    for series_id in ("series-a", "series-b"):
+        train = splits["train"].loc[splits["train"]["series_id"] == series_id]
+        validation = splits["validation"].loc[
+            splits["validation"]["series_id"] == series_id
+        ]
+        test = splits["test"].loc[splits["test"]["series_id"] == series_id]
+        assert train["timestamp"].max() < validation["timestamp"].min()
+        assert validation["timestamp"].max() < test["timestamp"].min()
+
+
+def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
+    timestamps = pd.date_range("2026-01-01", periods=20, freq="h", tz="UTC")
+    frame = pd.DataFrame(
+        {
+            "series_id": ["series-a"] * 20 + ["series-b"] * 20,
+            "timestamp": list(timestamps) + list(timestamps),
+            "value": list(range(1, 13)) + [13, 14, 15, 16, 100, 1, 2, 3] + [5] * 16 + [5, 5, 8, 5],
+            "label": [0] * 16 + [1, 0, 0, 0] + [0] * 20,
+        }
+    )
+
+    report = build_robust_zscore_report(frame)
+    first, second = report["series"]
+
+    assert report["threshold"] == 3.5
+    assert report["threshold_tuning"].startswith("None")
+    assert first["training_center"] == 6.5
+    assert first["scale_method"] == "median_absolute_deviation"
+    assert first["test"]["true_positives"] == 1
+    assert first["test"]["false_positives"] == 0
+    assert first["test"]["recall"] == 1.0
+    assert first["test"]["average_precision"] == 1.0
+    assert second["scale_method"] == "zero_variance_deviation_rule"
+    assert second["test"]["false_positives"] == 1
+    assert second["test"]["recall"] is None
+    assert report["test_micro_metrics"]["true_positives"] == 1
+    assert report["test_micro_metrics"]["false_positives"] == 1
+    assert report["test_micro_metrics"]["precision"] == 0.5
+
+
+def test_chronological_split_rejects_duplicate_timestamps() -> None:
+    frame = pd.DataFrame(
+        {
+            "series_id": ["series-a", "series-a"],
+            "timestamp": pd.to_datetime(
+                ["2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"],
+                utc=True,
+            ),
+            "value": [1.0, 1.0],
+            "label": [0, 0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="unique series timestamps"):
+        chronological_split(frame)
