@@ -50,9 +50,7 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
         ),
         "anomaly_points": int(frame["label"].sum()),
         "anomaly_fraction": float(frame["label"].mean()),
-        "duplicate_entity_timestamps": int(
-            frame.duplicated(["series_id", "timestamp"]).sum()
-        ),
+        "duplicate_entity_timestamps": int(frame.duplicated(["series_id", "timestamp"]).sum()),
         "series": series_reports,
         "interpretation": (
             "Descriptive data-quality audit only. Missing measurements are "
