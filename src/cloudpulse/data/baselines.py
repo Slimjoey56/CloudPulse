@@ -170,7 +170,6 @@ def _evaluate_partition(
     }
 
 
-
 def _select_validation_threshold(
     frame: pd.DataFrame,
     center: float | None,
@@ -282,25 +281,17 @@ def build_robust_zscore_report(
     tuned_counts = {key: 0 for key in metric_keys}
 
     for series_id, train_group in splits["train"].groupby("series_id", sort=True):
-        validation_group = splits["validation"].loc[
-            splits["validation"]["series_id"] == series_id
-        ]
+        validation_group = splits["validation"].loc[splits["validation"]["series_id"] == series_id]
         test_group = splits["test"].loc[splits["test"]["series_id"] == series_id]
         center, scale, scale_method = _fit_robust_location_scale(train_group["value"])
 
-        validation_fixed = _evaluate_partition(
-            validation_group, center, scale, threshold
-        )
+        validation_fixed = _evaluate_partition(validation_group, center, scale, threshold)
         test_fixed = _evaluate_partition(test_group, center, scale, threshold)
         selected_threshold, selection_reason = _select_validation_threshold(
             validation_group, center, scale, threshold
         )
-        validation_tuned = _evaluate_partition(
-            validation_group, center, scale, selected_threshold
-        )
-        test_tuned = _evaluate_partition(
-            test_group, center, scale, selected_threshold
-        )
+        validation_tuned = _evaluate_partition(validation_group, center, scale, selected_threshold)
+        test_tuned = _evaluate_partition(test_group, center, scale, selected_threshold)
 
         for key in metric_keys:
             source_key = "rows" if key == "test_rows" else key
