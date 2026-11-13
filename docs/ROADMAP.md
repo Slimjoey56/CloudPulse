@@ -30,6 +30,7 @@ This roadmap is dependency-driven. A stage is complete only when its acceptance 
 - [x] Add reproducible exploratory-analysis output to dataset CI artifacts.
 - [ ] Define anomaly-event handling and point-label evaluation policy.
 - [x] Implement a fixed-threshold robust z-score anomaly-detection baseline.
+- [x] Compare a per-series validation-selected threshold without using test labels.
 - [ ] Implement a separate static threshold baseline and compare its error profile.
 - [ ] Implement a simple forecasting baseline for suitable signals.
 - [ ] Define chronological validation and test boundaries.

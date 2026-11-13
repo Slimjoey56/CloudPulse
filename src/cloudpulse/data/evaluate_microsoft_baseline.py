@@ -1,4 +1,4 @@
-"""Evaluate a fixed-threshold robust z-score baseline on Microsoft telemetry."""
+"""Evaluate fixed and validation-tuned robust z-score baselines on Microsoft telemetry."""
 
 from __future__ import annotations
 
@@ -40,6 +40,10 @@ def main() -> None:
     print(f"Test micro precision: {metrics['precision']}")
     print(f"Test micro recall: {metrics['recall']}")
     print(f"Test micro F1: {metrics['f1']}")
+    tuned = report["validation_tuned_test_micro_metrics"]
+    print(f"Validation-tuned test precision: {tuned['precision']}")
+    print(f"Validation-tuned test recall: {tuned['recall']}")
+    print(f"Validation-tuned test F1: {tuned['f1']}")
     print(f"Report: {args.output}")
 
 

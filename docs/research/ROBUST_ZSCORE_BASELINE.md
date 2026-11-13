@@ -10,7 +10,9 @@ Establish a transparent statistical anomaly-detection baseline before introducin
 - Each series is sorted by timestamp and split independently into 60% training, 20% validation, and 20% test rows.
 - Training statistics are fitted independently for each series using its training values only.
 - Anomaly labels are not used to fit the center or scale; they are used only to calculate evaluation metrics.
-- The decision threshold is fixed at an absolute robust z-score of 3.5 before evaluation. It is not tuned on validation or test data.
+- The fixed baseline uses an absolute robust z-score threshold of 3.5, set before evaluation.
+- A separate comparison selects a per-series threshold by maximising F1 on the validation partition over the predeclared grid 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 8.0, and 10.0. The test partition is never used for threshold selection.
+- If a series has no scored validation rows or no positive validation labels, the tuned comparison falls back to the fixed threshold of 3.5 and records the reason.
 
 ## Detector
 
@@ -44,4 +46,4 @@ Test micro metrics aggregate confusion counts across series. Per-series metrics 
 
 Run `python -m cloudpulse.data.evaluate_microsoft_baseline`.
 
-The default output is `reports/generated/microsoft_robust_zscore_baseline.json`. The command includes preprocessing counts so every exclusion is visible alongside the evaluation results.
+The default output is `reports/generated/microsoft_robust_zscore_baseline.json`. The report includes both fixed-threshold and validation-selected test metrics, the selected threshold and fallback reason for each series, and preprocessing counts so every exclusion is visible alongside the evaluation results.

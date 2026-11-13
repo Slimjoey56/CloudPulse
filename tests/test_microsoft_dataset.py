@@ -307,7 +307,7 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
             "series_id": ["series-a"] * 20 + ["series-b"] * 20,
             "timestamp": list(timestamps) + list(timestamps),
             "value": list(range(1, 13)) + [13, 14, 15, 16, 100, 1, 2, 3] + [5] * 16 + [5, 5, 8, 5],
-            "label": [0] * 16 + [1, 0, 0, 0] + [0] * 16 + [1, 0, 0, 0],
+            "label": [0] * 12 + [0, 1, 1, 0] + [1, 0, 0, 0] + [0] * 16 + [1, 0, 0, 0],
         }
     )
 
@@ -315,18 +315,35 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
     first, second = report["series"]
 
     assert report["threshold"] == 3.5
-    assert report["threshold_tuning"].startswith("None")
+    assert report["threshold_tuning"].startswith("Fixed-threshold")
     assert first["training_center"] == 6.5
     assert first["scale_method"] == "median_absolute_deviation"
     assert first["test"]["true_positives"] == 1
     assert first["test"]["false_positives"] == 0
     assert first["test"]["recall"] == 1.0
     assert first["test"]["average_precision"] == 1.0
+    assert first["validation_selected_threshold"] == 1.5
+    assert first["threshold_selection"] == "selected_max_validation_f1"
+    assert first["test_at_validation_selected_threshold"]["true_positives"] == 1
     assert second["scale_method"] == "zero_variance_unscorable"
+    assert second["validation_selected_threshold"] == 3.5
+    assert second["threshold_selection"] == "fallback_unscorable_training_series"
     assert second["test"]["scored_rows"] == 0
     assert second["test"]["unscored_rows"] == 4
     assert second["test"]["false_positives"] == 0
     assert second["test"]["recall"] is None
+
+    changed_test_labels = frame.copy()
+    test_mask = (changed_test_labels["series_id"] == "series-a") & (
+        changed_test_labels["timestamp"] >= timestamps[16]
+    )
+    changed_test_labels.loc[test_mask, "label"] = [0, 1, 1, 1]
+    changed_report = build_robust_zscore_report(changed_test_labels)
+    assert (
+        changed_report["series"][0]["validation_selected_threshold"]
+        == first["validation_selected_threshold"]
+    )
+
     assert report["test_micro_metrics"]["test_rows"] == 8
     assert report["test_micro_metrics"]["scored_rows"] == 4
     assert report["test_micro_metrics"]["unscored_rows"] == 4
