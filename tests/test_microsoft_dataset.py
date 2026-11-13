@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -12,12 +13,22 @@ def _write_series(path: Path, rows: str) -> None:
     path.write_text(rows, encoding="utf-8")
 
 
-def test_loader_reads_and_identifies_multiple_series(tmp_path: Path) -> None:
+def test_loader_reads_metadata_and_identifies_multiple_series(tmp_path: Path) -> None:
+    first = tmp_path / "domain-a" / "series-1.csv"
     _write_series(
-        tmp_path / "domain-a" / "series-1.csv",
+        first,
         "TimeStamp,Value,Label\n"
         "2026-01-01T00:00:00Z,1.5,0\n"
         "2026-01-01T01:00:00Z,2.5,1\n",
+    )
+    Path(f"{first}-metadata.json").write_text(
+        json.dumps(
+            {
+                "notes": ["API request rate for test service."],
+                "schema:publisher": {"schema:name": "Example publisher"},
+            }
+        ),
+        encoding="utf-8",
     )
     _write_series(
         tmp_path / "domain-b" / "series-2.csv",
@@ -31,6 +42,9 @@ def test_loader_reads_and_identifies_multiple_series(tmp_path: Path) -> None:
     assert frame["series_id"].nunique() == 2
     assert str(frame["timestamp"].dtype) == "datetime64[ns, UTC]"
     assert int(frame["label"].sum()) == 1
+    first_row = frame.loc[frame["series_id"] == "domain-a/series-1"].iloc[0]
+    assert first_row["metric_description"] == "API request rate for test service."
+    assert first_row["publisher"] == "Example publisher"
 
 
 def test_loader_rejects_missing_columns(tmp_path: Path) -> None:
@@ -63,6 +77,16 @@ def test_loader_rejects_non_binary_labels(tmp_path: Path) -> None:
         load_microsoft_series(tmp_path)
 
 
+def test_loader_rejects_infinite_values(tmp_path: Path) -> None:
+    _write_series(
+        tmp_path / "invalid.csv",
+        "TimeStamp,Value,Label\n2026-01-01T00:00:00Z,inf,0\n",
+    )
+
+    with pytest.raises(ValueError, match="values must be finite"):
+        load_microsoft_series(tmp_path)
+
+
 def test_audit_report_is_descriptive_and_counts_duplicates() -> None:
     frame = pd.DataFrame(
         {
@@ -78,6 +102,8 @@ def test_audit_report_is_descriptive_and_counts_duplicates() -> None:
             "label": [0, 1, 0],
             "series_id": ["series-a", "series-a", "series-a"],
             "source_file": ["a.csv", "a.csv", "a.csv"],
+            "metric_description": [None, None, None],
+            "publisher": [None, None, None],
         }
     )
 

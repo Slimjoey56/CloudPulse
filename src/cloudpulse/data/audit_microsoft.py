@@ -28,6 +28,11 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
                 "anomaly_fraction": float(ordered["label"].mean()),
                 "duplicate_timestamps": int(ordered["timestamp"].duplicated().sum()),
                 "median_interval_seconds": median_interval,
+                "metric_description": (
+                    str(ordered["metric_description"].dropna().iloc[0])
+                    if ordered["metric_description"].notna().any()
+                    else None
+                ),
             }
         )
 
@@ -53,7 +58,7 @@ def main() -> None:
         "--data",
         type=Path,
         default=Path("data/raw/microsoft_cloud_monitoring"),
-        help="Directory containing the extracted data/ tree",
+        help="Directory containing the extracted CSV and metadata files",
     )
     parser.add_argument(
         "--output",
