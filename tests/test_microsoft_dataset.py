@@ -37,7 +37,8 @@ def test_loader_reads_metadata_and_identifies_multiple_series(tmp_path: Path) ->
 
     assert len(frame) == 3
     assert frame["series_id"].nunique() == 2
-    assert str(frame["timestamp"].dtype) == "datetime64[ns, UTC]"
+    assert isinstance(frame["timestamp"].dtype, pd.DatetimeTZDtype)
+    assert str(frame["timestamp"].dtype.tz) == "UTC"
     assert int(frame["label"].sum()) == 1
     first_row = frame.loc[frame["series_id"] == "domain-a/series-1"].iloc[0]
     assert first_row["metric_description"] == "API request rate for test service."
