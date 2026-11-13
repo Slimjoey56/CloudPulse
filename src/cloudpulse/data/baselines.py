@@ -66,7 +66,7 @@ def _fit_robust_location_scale(values: pd.Series) -> tuple[float | None, float |
     if interquartile_range > 0:
         return center, interquartile_range / 1.349, "interquartile_range_fallback"
 
-    return center, 0.0, "zero_variance_deviation_rule"
+    return center, None, "zero_variance_unscorable"
 
 
 def _score_values(values: pd.Series, center: float, scale: float) -> pd.Series:
@@ -119,6 +119,8 @@ def _evaluate_partition(
         return {
             "rows": int(len(frame)),
             "scored_rows": 0,
+            "unscored_rows": int(len(observed)),
+            "unscored_positive_labels": int(observed["label"].sum()),
             "missing_value_rows": missing_count,
             "positive_labels": 0,
             "true_positives": 0,
@@ -154,6 +156,8 @@ def _evaluate_partition(
     return {
         "rows": int(len(frame)),
         "scored_rows": int(len(observed)),
+        "unscored_rows": 0,
+        "unscored_positive_labels": 0,
         "missing_value_rows": missing_count,
         "positive_labels": int(positive_count),
         "true_positives": int(true_positives),
@@ -185,6 +189,8 @@ def build_robust_zscore_report(
     series_reports: list[dict[str, Any]] = []
     aggregate_counts = {
         "scored_rows": 0,
+        "unscored_rows": 0,
+        "unscored_positive_labels": 0,
         "positive_labels": 0,
         "true_positives": 0,
         "false_positives": 0,
@@ -238,7 +244,7 @@ def build_robust_zscore_report(
         "scale_fallbacks": {
             "primary": "1.4826 multiplied by training median absolute deviation",
             "secondary": "training interquartile range divided by 1.349",
-            "zero_variance": "non-zero deviations from the training median are flagged",
+            "zero_variance": "series is unscorable; no arbitrary anomaly flags are generated",
         },
         "test_micro_metrics": {
             **aggregate_counts,
