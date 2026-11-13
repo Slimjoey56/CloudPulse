@@ -81,6 +81,14 @@ Generate reproducible per-series exploratory summaries:
 python -m cloudpulse.data.explore_microsoft
 ```
 
+Evaluate the fixed-threshold robust z-score baseline:
+
+```bash
+python -m cloudpulse.data.evaluate_microsoft_baseline
+```
+
+The baseline uses per-series chronological 60/20/20 splits, fits robust location and scale on training data only, and evaluates point labels on validation and test partitions. Its threshold is fixed at 3.5 and is not tuned on the evaluation data.
+
 The exploration command prepares the data first and writes `reports/generated/microsoft_cloud_monitoring_exploration.json`. It reports value statistics per series and does not pool values across metrics with different units.
 
 The preparation function preserves the raw frame, collapses exact duplicate observations, excludes unresolved conflicting timestamp groups, and retains missing values for downstream training-only handling.
@@ -106,6 +114,8 @@ pytest
 - [Modelling view policy](docs/data/MODELLING_VIEW_POLICY.md)
 - [Exploratory analysis protocol](docs/research/EXPLORATORY_ANALYSIS_PROTOCOL.md)
 - [Observed exploratory findings](docs/research/EXPLORATORY_FINDINGS.md)
+- [Robust z-score baseline protocol](docs/research/ROBUST_ZSCORE_BASELINE.md)
+- [Initial robust z-score baseline results](docs/research/ROBUST_ZSCORE_BASELINE_RESULTS.md)
 - [Data governance](docs/data/DATA_GOVERNANCE.md)
 - [Development roadmap](docs/ROADMAP.md)
 - [Contribution standards](CONTRIBUTING.md)
