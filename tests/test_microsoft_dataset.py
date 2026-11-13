@@ -153,6 +153,7 @@ def test_audit_report_classifies_exact_and_conflicting_duplicates() -> None:
     assert series_report["conflicting_timestamp_groups"] == 1
     assert "No model has been trained" in report["interpretation"]
 
+
 def test_model_frame_collapses_exact_copies_and_excludes_conflicts() -> None:
     frame = pd.DataFrame(
         {
@@ -190,6 +191,7 @@ def test_model_frame_collapses_exact_copies_and_excludes_conflicts() -> None:
     }
     assert prepared["value"].isna().sum() == 1
 
+
 def test_model_frame_handles_empty_input() -> None:
     frame = pd.DataFrame(columns=["series_id", "timestamp", "value", "label"])
 
@@ -198,6 +200,7 @@ def test_model_frame_handles_empty_input() -> None:
     assert prepared.empty
     assert report["input_rows"] == 0
     assert report["output_rows"] == 0
+
 
 def test_model_frame_rejects_missing_required_columns() -> None:
     frame = pd.DataFrame({"series_id": ["series-a"], "timestamp": [pd.Timestamp.now()]})
