@@ -10,7 +10,8 @@ CloudPulse is an applied research and software-engineering project for analysing
 - CSV loader that preserves each source file as an independent time series.
 - CSVW metadata ingestion where metadata is available.
 - Validation of timestamps, numeric values, and binary anomaly labels.
-- Descriptive data-quality audit report.
+- Descriptive data-quality audit with exact-duplicate and conflicting-timestamp classification.
+- Conservative modelling-view preparation that collapses exact copies and excludes unresolved conflicting timestamp groups.
 - Telemetry record schema and duplicate-observation checks.
 - Unit tests and a GitHub Actions quality workflow.
 
@@ -60,6 +61,21 @@ Generate the descriptive data-quality report:
 python -m cloudpulse.data.audit_microsoft
 ```
 
+Prepare a modelling view in Python after loading the dataset:
+
+```python
+from pathlib import Path
+
+from cloudpulse.data.microsoft import load_microsoft_series
+from cloudpulse.data.preparation import prepare_microsoft_model_frame
+
+raw = load_microsoft_series(Path("data/raw/microsoft_cloud_monitoring"))
+model_frame, preparation_report = prepare_microsoft_model_frame(raw)
+print(preparation_report)
+```
+
+The preparation function preserves the raw frame, collapses exact duplicate observations, excludes unresolved conflicting timestamp groups, and retains missing values for downstream training-only handling.
+
 The default report path is `reports/generated/microsoft_cloud_monitoring_audit.json`. Raw data and generated reports are excluded from Git.
 
 Run code-quality checks:
@@ -77,6 +93,8 @@ pytest
 - [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Dataset selection decision](docs/data/DATASET_DECISION.md)
 - [Microsoft dataset card](docs/data/DATASET_CARD_MICROSOFT.md)
+- [Duplicate timestamp investigation](docs/data/DUPLICATE_RECORD_INVESTIGATION.md)
+- [Modelling view policy](docs/data/MODELLING_VIEW_POLICY.md)
 - [Data governance](docs/data/DATA_GOVERNANCE.md)
 - [Development roadmap](docs/ROADMAP.md)
 - [Contribution standards](CONTRIBUTING.md)
