@@ -88,3 +88,10 @@ jobs:
           name: microsoft-cloud-monitoring-baseline
           path: reports/generated/microsoft_robust_zscore_baseline.json
           if-no-files-found: error
+
+      - name: Upload causal rolling detector evaluation
+        uses: actions/upload-artifact@v4
+        with:
+          name: microsoft-cloud-monitoring-causal-rolling
+          path: reports/generated/microsoft_causal_rolling_detector.json
+          if-no-files-found: error
