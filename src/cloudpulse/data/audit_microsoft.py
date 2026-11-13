@@ -45,9 +45,7 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
         "series_count": int(frame["series_id"].nunique()),
         "valid_value_count": valid_value_count,
         "missing_value_count": missing_value_count,
-        "missing_value_fraction": (
-            float(missing_value_count / len(frame)) if len(frame) else 0.0
-        ),
+        "missing_value_fraction": (float(missing_value_count / len(frame)) if len(frame) else 0.0),
         "anomaly_points": int(frame["label"].sum()),
         "anomaly_fraction": float(frame["label"].mean()),
         "duplicate_entity_timestamps": int(frame.duplicated(["series_id", "timestamp"]).sum()),
