@@ -32,8 +32,7 @@ def test_loader_reads_metadata_and_identifies_multiple_series(tmp_path: Path) ->
     )
     _write_series(
         tmp_path / "domain-b" / "series-2.csv",
-        "TimeStamp,Value,Label\n"
-        "2026-01-02T00:00:00Z,3.5,0\n",
+        "TimeStamp,Value,Label\n2026-01-02T00:00:00Z,3.5,0\n",
     )
 
     frame = load_microsoft_series(tmp_path)
@@ -45,6 +44,35 @@ def test_loader_reads_metadata_and_identifies_multiple_series(tmp_path: Path) ->
     first_row = frame.loc[frame["series_id"] == "domain-a/series-1"].iloc[0]
     assert first_row["metric_description"] == "API request rate for test service."
     assert first_row["publisher"] == "Example publisher"
+
+
+def test_loader_preserves_blank_measurements_as_missing(tmp_path: Path) -> None:
+    _write_series(
+        tmp_path / "series.csv",
+        "TimeStamp,Value,Label\n"
+        "2026-01-01T00:00:00Z,1.0,0\n"
+        "2026-01-01T01:00:00Z,,1\n",
+    )
+
+    frame = load_microsoft_series(tmp_path)
+
+    assert len(frame) == 2
+    assert pd.isna(frame.iloc[1]["value"])
+    report = build_audit_report(frame)
+    assert report["row_count"] == 2
+    assert report["valid_value_count"] == 1
+    assert report["missing_value_count"] == 1
+    assert report["missing_value_fraction"] == 0.5
+
+
+def test_loader_rejects_non_empty_non_numeric_measurements(tmp_path: Path) -> None:
+    _write_series(
+        tmp_path / "invalid.csv",
+        "TimeStamp,Value,Label\n2026-01-01T00:00:00Z,not-a-number,0\n",
+    )
+
+    with pytest.raises(ValueError, match="non-empty values are not numeric"):
+        load_microsoft_series(tmp_path)
 
 
 def test_loader_rejects_missing_columns(tmp_path: Path) -> None:
