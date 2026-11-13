@@ -70,11 +70,10 @@ def _fit_robust_location_scale(values: pd.Series) -> tuple[float | None, float |
 
 
 def _score_values(values: pd.Series, center: float, scale: float) -> pd.Series:
-    """Calculate absolute robust z-scores, with a defined zero-scale fallback."""
-    deviation = (values - center).abs()
-    if scale > 0:
-        return deviation / scale
-    return deviation.map(lambda value: 0.0 if value == 0 else math.inf)
+    """Calculate absolute robust z-scores using a positive training scale."""
+    if scale <= 0 or not math.isfinite(scale):
+        raise ValueError("scale must be finite and positive")
+    return (values - center).abs() / scale
 
 
 def _average_precision(labels: list[int], scores: list[float]) -> float | None:
