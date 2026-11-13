@@ -471,13 +471,7 @@ def build_causal_rolling_report(
     tuned_counts = {key: 0 for key in metric_keys}
 
     for series_id, train_group in splits["train"].groupby("series_id", sort=True):
-        validation_indices = splits["validation"].index
-        test_indices = splits["test"].index
-        validation_ids = set(validation_indices)
-        test_ids = set(test_indices)
         series_rows = scored.loc[scored["series_id"] == series_id].copy()
-        # The split frames retain their original row indices only until concatenation;
-        # timestamp boundaries provide an unambiguous per-series partition here.
         ordered = frame.loc[frame["series_id"] == series_id].sort_values(
             "timestamp", kind="stable"
         )
