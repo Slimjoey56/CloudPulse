@@ -65,6 +65,9 @@ jobs:
       - name: Generate per-series exploratory report
         run: python -m cloudpulse.data.explore_microsoft
 
+      - name: Evaluate robust z-score baseline
+        run: python -m cloudpulse.data.evaluate_microsoft_baseline
+
       - name: Upload data-quality report
         uses: actions/upload-artifact@v4
         with:
@@ -77,4 +80,11 @@ jobs:
         with:
           name: microsoft-cloud-monitoring-exploration
           path: reports/generated/microsoft_cloud_monitoring_exploration.json
+          if-no-files-found: error
+
+      - name: Upload baseline evaluation
+        uses: actions/upload-artifact@v4
+        with:
+          name: microsoft-cloud-monitoring-baseline
+          path: reports/generated/microsoft_robust_zscore_baseline.json
           if-no-files-found: error
