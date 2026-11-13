@@ -3,10 +3,10 @@
 from datetime import datetime, timezone
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 
 
-NonEmptyString = Annotated[str, Field(min_length=1, strip_whitespace=True)]
+NonEmptyString = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class TelemetryRecord(BaseModel):

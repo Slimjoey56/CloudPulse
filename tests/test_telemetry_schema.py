@@ -52,7 +52,7 @@ def test_record_rejects_empty_entity_identifier() -> None:
 
 
 def test_record_rejects_unexpected_fields() -> None:
-    with pytest.raises(ValidationError, match="extra"):
+    with pytest.raises(ValidationError, match="Extra inputs"):
         TelemetryRecord(
             timestamp=datetime.now(timezone.utc),
             entity_id="worker-01",
