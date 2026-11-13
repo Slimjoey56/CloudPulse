@@ -17,14 +17,18 @@ This roadmap is dependency-driven. A stage is complete only when its acceptance 
 - [x] Implement canonical loader and descriptive audit command.
 - [ ] Verify data-specific reuse terms before any redistribution.
 - [ ] Download the dataset and run the audit on a development machine.
-- [ ] Inspect the automated CI audit artifact and review per-series quality findings.
-- [ ] Review the generated data-quality report and document findings.
+- [x] Inspect the automated CI audit artifact and review per-series quality findings.
+- [x] Classify exact duplicate observations and conflicting timestamp groups.
+- [x] Document the source-level duplicate investigation and handling policy.
+- [x] Implement and test a conservative modelling-view preparation function.
+- [x] Review the generated data-quality report and document findings.
 
 **Exit criteria:** a downloaded, version-pinned dataset; reproducible acquisition manifest; completed data-quality report; documented limitations. No model claims are required at this stage.
 
 ## Stage 2 — Exploratory analysis and baseline
 - [ ] Explore distributions, temporal patterns, missingness, and series variation.
 - [ ] Define anomaly-event handling and point-label evaluation policy.
+- [ ] Create reproducible exploratory analysis outputs for selected series.
 - [ ] Implement static and robust-statistical detection baselines.
 - [ ] Implement a simple forecasting baseline for suitable signals.
 - [ ] Define chronological validation and test boundaries.

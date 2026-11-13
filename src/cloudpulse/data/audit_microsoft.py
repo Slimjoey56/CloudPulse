@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from cloudpulse.data.microsoft import load_microsoft_series
+from cloudpulse.data.preparation import prepare_microsoft_model_frame
 
 
 def _duplicate_metrics(frame: pd.DataFrame) -> dict[str, int]:
@@ -77,6 +78,7 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
     missing_value_count = int(frame["value"].isna().sum())
     valid_value_count = int(frame["value"].notna().sum())
     duplicate_metrics = _duplicate_metrics(frame)
+    _, modelling_view_report = prepare_microsoft_model_frame(frame)
     return {
         "row_count": int(len(frame)),
         "series_count": int(frame["series_id"].nunique()),
@@ -86,6 +88,7 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
         "anomaly_points": int(frame["label"].sum()),
         "anomaly_fraction": float(frame["label"].mean()),
         **duplicate_metrics,
+        "modelling_view_preparation": modelling_view_report,
         "series": series_reports,
         "interpretation": (
             "Descriptive data-quality audit only. Missing measurements are "

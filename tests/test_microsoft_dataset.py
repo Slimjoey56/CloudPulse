@@ -6,6 +6,7 @@ import pytest
 
 from cloudpulse.data.audit_microsoft import build_audit_report
 from cloudpulse.data.microsoft import load_microsoft_series
+from cloudpulse.data.preparation import prepare_microsoft_model_frame
 
 
 def _write_series(path: Path, rows: str) -> None:
@@ -147,7 +148,70 @@ def test_audit_report_classifies_exact_and_conflicting_duplicates() -> None:
     assert report["conflicting_timestamp_rows"] == 4
     assert report["value_conflict_groups"] == 1
     assert report["label_conflict_groups"] == 1
+    assert report["modelling_view_preparation"] == {
+        "input_rows": 6,
+        "conflicting_timestamp_groups_excluded": 1,
+        "conflicting_rows_excluded": 4,
+        "exact_duplicate_rows_removed": 1,
+        "missing_value_rows_retained": 0,
+        "output_rows": 1,
+    }
     assert series_report["duplicate_timestamp_groups"] == 2
     assert series_report["duplicate_excess_rows"] == 4
     assert series_report["conflicting_timestamp_groups"] == 1
     assert "No model has been trained" in report["interpretation"]
+
+
+def test_model_frame_collapses_exact_copies_and_excludes_conflicts() -> None:
+    frame = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(
+                [
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-01T01:00:00Z",
+                    "2026-01-01T01:00:00Z",
+                    "2026-01-01T02:00:00Z",
+                ],
+                utc=True,
+            ),
+            "value": [1.0, 1.0, 2.0, 3.0, float("nan")],
+            "label": [0, 0, 0, 0, 1],
+            "series_id": ["series-a"] * 5,
+            "source_file": ["a.csv"] * 5,
+        }
+    )
+    original = frame.copy(deep=True)
+
+    prepared, report = prepare_microsoft_model_frame(frame)
+
+    assert len(frame) == len(original)
+    pd.testing.assert_frame_equal(frame, original)
+    assert len(prepared) == 2
+    assert not prepared.duplicated(["series_id", "timestamp"]).any()
+    assert report == {
+        "input_rows": 5,
+        "conflicting_timestamp_groups_excluded": 1,
+        "conflicting_rows_excluded": 2,
+        "exact_duplicate_rows_removed": 1,
+        "missing_value_rows_retained": 1,
+        "output_rows": 2,
+    }
+    assert prepared["value"].isna().sum() == 1
+
+
+def test_model_frame_handles_empty_input() -> None:
+    frame = pd.DataFrame(columns=["series_id", "timestamp", "value", "label"])
+
+    prepared, report = prepare_microsoft_model_frame(frame)
+
+    assert prepared.empty
+    assert report["input_rows"] == 0
+    assert report["output_rows"] == 0
+
+
+def test_model_frame_rejects_missing_required_columns() -> None:
+    frame = pd.DataFrame({"series_id": ["series-a"], "timestamp": [pd.Timestamp.now()]})
+
+    with pytest.raises(ValueError, match="Missing required columns"):
+        prepare_microsoft_model_frame(frame)
