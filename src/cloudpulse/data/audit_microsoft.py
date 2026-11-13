@@ -22,6 +22,8 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
             {
                 "series_id": str(series_id),
                 "rows": int(len(ordered)),
+                "missing_value_count": int(ordered["value"].isna().sum()),
+                "valid_value_count": int(ordered["value"].notna().sum()),
                 "start_utc": ordered["timestamp"].min().isoformat(),
                 "end_utc": ordered["timestamp"].max().isoformat(),
                 "anomaly_points": int(ordered["label"].sum()),
@@ -36,9 +38,16 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
             }
         )
 
+    missing_value_count = int(frame["value"].isna().sum())
+    valid_value_count = int(frame["value"].notna().sum())
     return {
         "row_count": int(len(frame)),
         "series_count": int(frame["series_id"].nunique()),
+        "valid_value_count": valid_value_count,
+        "missing_value_count": missing_value_count,
+        "missing_value_fraction": (
+            float(missing_value_count / len(frame)) if len(frame) else 0.0
+        ),
         "anomaly_points": int(frame["label"].sum()),
         "anomaly_fraction": float(frame["label"].mean()),
         "duplicate_entity_timestamps": int(
@@ -46,7 +55,8 @@ def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
         ),
         "series": series_reports,
         "interpretation": (
-            "Descriptive data-quality audit only. No model has been trained "
+            "Descriptive data-quality audit only. Missing measurements are "
+            "retained and reported, not imputed. No model has been trained "
             "and no predictive performance is measured."
         ),
     }
@@ -74,6 +84,7 @@ def main() -> None:
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"Rows: {report['row_count']}")
     print(f"Series: {report['series_count']}")
+    print(f"Missing measurements: {report['missing_value_count']}")
     print(f"Anomaly points: {report['anomaly_points']}")
     print(f"Report: {args.output}")
 
