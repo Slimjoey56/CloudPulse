@@ -315,7 +315,7 @@ def test_robust_zscore_uses_training_only_and_reports_test_metrics() -> None:
     first, second = report["series"]
 
     assert report["threshold"] == 3.5
-    assert report["threshold_tuning"].startswith("None")
+    assert report["threshold_tuning"].startswith("Fixed-threshold")
     assert first["training_center"] == 6.5
     assert first["scale_method"] == "median_absolute_deviation"
     assert first["test"]["true_positives"] == 1
