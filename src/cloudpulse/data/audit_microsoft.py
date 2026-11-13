@@ -1,0 +1,77 @@
+"""Create a reproducible data-quality report for the Microsoft dataset."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+import pandas as pd
+
+from cloudpulse.data.microsoft import load_microsoft_series
+
+
+def build_audit_report(frame: pd.DataFrame) -> dict[str, object]:
+    """Summarise file-level and dataset-level quality without fitting models."""
+    series_reports: list[dict[str, object]] = []
+    for series_id, group in frame.groupby("series_id", sort=True):
+        ordered = group.sort_values("timestamp")
+        intervals = ordered["timestamp"].diff().dropna().dt.total_seconds()
+        median_interval = float(intervals.median()) if not intervals.empty else None
+        series_reports.append(
+            {
+                "series_id": str(series_id),
+                "rows": int(len(ordered)),
+                "start_utc": ordered["timestamp"].min().isoformat(),
+                "end_utc": ordered["timestamp"].max().isoformat(),
+                "anomaly_points": int(ordered["label"].sum()),
+                "anomaly_fraction": float(ordered["label"].mean()),
+                "duplicate_timestamps": int(ordered["timestamp"].duplicated().sum()),
+                "median_interval_seconds": median_interval,
+            }
+        )
+
+    return {
+        "row_count": int(len(frame)),
+        "series_count": int(frame["series_id"].nunique()),
+        "anomaly_points": int(frame["label"].sum()),
+        "anomaly_fraction": float(frame["label"].mean()),
+        "duplicate_entity_timestamps": int(
+            frame.duplicated(["series_id", "timestamp"]).sum()
+        ),
+        "series": series_reports,
+        "interpretation": (
+            "Descriptive data-quality audit only. No model has been trained "
+            "and no predictive performance is measured."
+        ),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path("data/raw/microsoft_cloud_monitoring"),
+        help="Directory containing the extracted data/ tree",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/generated/microsoft_cloud_monitoring_audit.json"),
+        help="Path for the JSON audit report",
+    )
+    args = parser.parse_args()
+
+    frame = load_microsoft_series(args.data)
+    report = build_audit_report(frame)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    print(f"Rows: {report['row_count']}")
+    print(f"Series: {report['series_count']}")
+    print(f"Anomaly points: {report['anomaly_points']}")
+    print(f"Report: {args.output}")
+
+
+if __name__ == "__main__":
+    main()
