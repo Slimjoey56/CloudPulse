@@ -31,12 +31,12 @@ def _read_metadata(csv_path: Path) -> tuple[str | None, str | None]:
 
 
 def load_microsoft_series(data_dir: Path) -> pd.DataFrame:
-    """Load CSV time series below data_dir into a canonical long-form frame.
+    """Load CSV time series into a canonical long-form frame.
 
-    Each source CSV remains a distinct univariate series. Timestamps are
-    normalised to UTC for consistent ordering. Naive source timestamps are
-    interpreted as UTC by pandas; the original source timestamp is retained
-    only in the raw downloaded files.
+    Blank source measurements are retained as NaN so their timestamps and
+    labels remain auditable. Non-empty, non-numeric measurements are rejected.
+    Each source CSV remains a distinct univariate series. Naive source
+    timestamps are interpreted as UTC.
     """
     csv_files = sorted(data_dir.rglob("*.csv"))
     if not csv_files:
@@ -56,10 +56,11 @@ def load_microsoft_series(data_dir: Path) -> pd.DataFrame:
             raise ValueError(f"{csv_path}: {bad_count} timestamps could not be parsed")
 
         values = pd.to_numeric(frame["Value"], errors="coerce")
-        if values.isna().any():
-            bad_count = int(values.isna().sum())
-            raise ValueError(f"{csv_path}: {bad_count} values are not numeric")
-        if not values.map(math.isfinite).all():
+        invalid_values = values.isna() & frame["Value"].notna()
+        if invalid_values.any():
+            bad_count = int(invalid_values.sum())
+            raise ValueError(f"{csv_path}: {bad_count} non-empty values are not numeric")
+        if not values.dropna().map(math.isfinite).all():
             raise ValueError(f"{csv_path}: values must be finite")
 
         labels = pd.to_numeric(frame["Label"], errors="coerce")
