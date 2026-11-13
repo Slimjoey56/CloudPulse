@@ -41,18 +41,13 @@ def build_exploration_report(frame: pd.DataFrame) -> dict[str, Any]:
             else 0
         )
         quantiles = (
-            {
-                f"q{int(q * 100):02d}": _finite_or_none(values.quantile(q))
-                for q in QUANTILES
-            }
+            {f"q{int(q * 100):02d}": _finite_or_none(values.quantile(q)) for q in QUANTILES}
             if not values.empty
             else {f"q{int(q * 100):02d}": None for q in QUANTILES}
         )
         median_value = _finite_or_none(values.median()) if not values.empty else None
         mad = (
-            _finite_or_none((values - values.median()).abs().median())
-            if not values.empty
-            else None
+            _finite_or_none((values - values.median()).abs().median()) if not values.empty else None
         )
         reports.append(
             {
@@ -73,9 +68,7 @@ def build_exploration_report(frame: pd.DataFrame) -> dict[str, Any]:
                 "value_max": _finite_or_none(values.max()) if not values.empty else None,
                 "value_median": median_value,
                 "value_median_absolute_deviation": mad,
-                "value_zero_fraction": (
-                    float(values.eq(0).mean()) if not values.empty else None
-                ),
+                "value_zero_fraction": (float(values.eq(0).mean()) if not values.empty else None),
                 "value_quantiles": quantiles,
                 "metric_description": (
                     str(ordered["metric_description"].dropna().iloc[0])
