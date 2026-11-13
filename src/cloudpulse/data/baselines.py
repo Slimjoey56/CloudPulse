@@ -225,7 +225,10 @@ def _micro_metrics(counts: dict[str, int]) -> dict[str, Any]:
     positive_count_with_unscored = (
         true_positives + false_negatives + counts["unscored_positive_labels"]
     )
-    conservative_recall = (true_positives / positive_count_with_unscored if positive_count_with_unscored else None)
+    if positive_count_with_unscored:
+        conservative_recall = true_positives / positive_count_with_unscored
+    else:
+        conservative_recall = None
     conservative_f1 = (
         2 * precision * conservative_recall / (precision + conservative_recall)
         if conservative_recall is not None and precision + conservative_recall
