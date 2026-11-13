@@ -36,9 +36,7 @@ def build_exploration_report(frame: pd.DataFrame) -> dict[str, Any]:
         intervals = ordered["timestamp"].diff().dropna().dt.total_seconds()
         median_interval = _finite_or_none(intervals.median()) if not intervals.empty else None
         gap_count = (
-            int((intervals > 1.5 * median_interval).sum())
-            if median_interval is not None
-            else 0
+            int((intervals > 1.5 * median_interval).sum()) if median_interval is not None else 0
         )
         quantiles = (
             {f"q{int(q * 100):02d}": _finite_or_none(values.quantile(q)) for q in QUANTILES}
