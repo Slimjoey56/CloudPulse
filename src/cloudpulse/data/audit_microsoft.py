@@ -11,7 +11,6 @@ import pandas as pd
 from cloudpulse.data.microsoft import load_microsoft_series
 
 
-
 def _duplicate_metrics(frame: pd.DataFrame) -> dict[str, int]:
     """Classify repeated entity/timestamp keys without dropping source rows."""
     key_columns = ["series_id", "timestamp"]
@@ -33,12 +32,8 @@ def _duplicate_metrics(frame: pd.DataFrame) -> dict[str, int]:
         if len(conflicting_keys)
         else duplicate_rows.iloc[0:0]
     )
-    value_counts = duplicate_rows.groupby(key_columns, dropna=False)["value"].nunique(
-        dropna=False
-    )
-    label_counts = duplicate_rows.groupby(key_columns, dropna=False)["label"].nunique(
-        dropna=False
-    )
+    value_counts = duplicate_rows.groupby(key_columns, dropna=False)["value"].nunique(dropna=False)
+    label_counts = duplicate_rows.groupby(key_columns, dropna=False)["label"].nunique(dropna=False)
 
     return {
         "duplicate_timestamp_groups": int(len(duplicate_keys)),
