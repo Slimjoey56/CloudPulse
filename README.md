@@ -115,6 +115,7 @@ pytest
 - [Exploratory analysis protocol](docs/research/EXPLORATORY_ANALYSIS_PROTOCOL.md)
 - [Observed exploratory findings](docs/research/EXPLORATORY_FINDINGS.md)
 - [Robust z-score baseline protocol](docs/research/ROBUST_ZSCORE_BASELINE.md)
+- [Initial robust z-score baseline results](docs/research/ROBUST_ZSCORE_BASELINE_RESULTS.md)
 - [Data governance](docs/data/DATA_GOVERNANCE.md)
 - [Development roadmap](docs/ROADMAP.md)
 - [Contribution standards](CONTRIBUTING.md)
