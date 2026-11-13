@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import pytest
@@ -21,8 +21,8 @@ def _record(timestamp: datetime, value: float = 1.0) -> TelemetryRecord:
 
 
 def test_records_to_frame_sorts_by_entity_metric_and_time() -> None:
-    later = datetime(2026, 1, 2, tzinfo=timezone.utc)
-    earlier = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    later = datetime(2026, 1, 2, tzinfo=UTC)
+    earlier = datetime(2026, 1, 1, tzinfo=UTC)
 
     frame = records_to_frame([_record(later), _record(earlier)])
 
@@ -44,7 +44,7 @@ def test_records_to_frame_handles_empty_input() -> None:
 
 
 def test_duplicate_detector_flags_all_repeated_keys() -> None:
-    timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    timestamp = datetime(2026, 1, 1, tzinfo=UTC)
     frame = records_to_frame([_record(timestamp), _record(timestamp, 2.0)])
 
     duplicates = find_duplicate_observations(frame)

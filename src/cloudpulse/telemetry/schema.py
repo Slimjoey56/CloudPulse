@@ -1,6 +1,6 @@
 """Canonical telemetry data contracts."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
@@ -27,7 +27,7 @@ class TelemetryRecord(BaseModel):
         """Require timezone-aware timestamps to avoid ambiguous event ordering."""
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("timestamp must include timezone information")
-        return value.astimezone(timezone.utc)
+        return value.astimezone(UTC)
 
     @field_validator("value")
     @classmethod

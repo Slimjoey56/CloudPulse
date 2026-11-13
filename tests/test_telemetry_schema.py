@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -15,7 +15,7 @@ def test_record_normalises_timestamp_to_utc() -> None:
         unit="percent",
     )
 
-    assert record.timestamp == datetime(2026, 1, 1, tzinfo=timezone.utc)
+    assert record.timestamp == datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def test_record_rejects_naive_timestamp() -> None:
@@ -32,7 +32,7 @@ def test_record_rejects_naive_timestamp() -> None:
 def test_record_rejects_non_finite_value() -> None:
     with pytest.raises(ValidationError, match="finite"):
         TelemetryRecord(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             entity_id="worker-01",
             metric_name="cpu_utilization",
             value=float("nan"),
@@ -43,7 +43,7 @@ def test_record_rejects_non_finite_value() -> None:
 def test_record_rejects_empty_entity_identifier() -> None:
     with pytest.raises(ValidationError):
         TelemetryRecord(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             entity_id=" ",
             metric_name="cpu_utilization",
             value=42.5,
@@ -54,7 +54,7 @@ def test_record_rejects_empty_entity_identifier() -> None:
 def test_record_rejects_unexpected_fields() -> None:
     with pytest.raises(ValidationError, match="Extra inputs"):
         TelemetryRecord(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             entity_id="worker-01",
             metric_name="cpu_utilization",
             value=42.5,
