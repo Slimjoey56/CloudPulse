@@ -9,7 +9,7 @@ import shutil
 import tempfile
 import urllib.request
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 SOURCE_COMMIT = "6a07a53c2fac495fb6831811df4c980d6c04bd10"
@@ -92,7 +92,7 @@ def download_dataset(output_dir: Path) -> dict[str, object]:
             "source_commit": SOURCE_COMMIT,
             "archive_url": ARCHIVE_URL,
             "archive_sha256": archive_digest,
-            "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+            "retrieved_at_utc": datetime.now(UTC).isoformat(),
             "csv_files": csv_count,
             "metadata_files": metadata_count,
             "raw_data_bytes": sum(
